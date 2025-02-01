@@ -134,12 +134,12 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             print("Type stop to stop the game")
         
         # Check for commands shown above
-        if inp == "list locations":
+        elif inp == "list locations":
             for loc in locations.values():
                 if loc.canTravel(currentLoc,locations):
                     print(loc.name)
 
-        if "travel" in inp[:6]:
+        elif "travel" in inp[:6]:
             try:
                 target = " ".join(inp.split()[1:])
                 if locations[target].canTravel(currentLoc, locations):
@@ -154,17 +154,17 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             except KeyError:
                 print("Invalid Selection")
         
-        if inp == "inventory":
+        elif inp == "inventory":
             for itm in inventory.keys():
                 print(itm)
 
-        if "info" in inp[:4]:
+        elif "info" in inp[:4]:
             try:
                 print(inventory[" ".join(inp.split()[1:])].info)
             except KeyError:
                 print("Invalid Selection")
         
-        if "use" in inp[:3]:
+        elif "use" in inp[:3]:
             try:
                 itm = inventory[" ".join(inp.split()[1:])]
                 if(itm.onUse != None):
@@ -174,12 +174,12 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             except KeyError:
                 print("Invalid Selection")
         
-        if "list characters" == inp:
+        elif "list characters" == inp:
             for chr in characters.values():
                 if(chr.canInteract(currentLoc)):
                     print(chr.name)
 
-        if "character" in inp[:9]:
+        elif "character" in inp[:9]:
             try:
                 target = characters[" ".join(inp.split()[1:])]
                 if(target.canInteract(currentLoc)):
@@ -187,12 +187,12 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             except KeyError:
                 print("Invalid Selection")
         
-        if "list interactables" == inp:
+        elif "list interactables" == inp:
             for int in interactables.values():
                 if(int.canInteract(currentLoc)):
                     print(intr.name)
 
-        if "interact" in inp[:8]:
+        elif "interact" in inp[:8]:
             try:
                 target = interactables[" ".join(inp.split()[1:])]
                 if(target.canInteract(currentLoc)):
@@ -200,7 +200,7 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             except KeyError:
                 print("Invalid Selection")
         
-        if "list all" == inp:
+        elif "list all" == inp:
             # Locations
             print("Locations:")
             for loc in locations.values():
@@ -216,5 +216,8 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
             for int in interactables.values():
                 if(int.canInteract(currentLoc)):
                     print(int.name)
+        
+        else:
+            print("Invalid Command")
     
     print("Thank you for playing!")
