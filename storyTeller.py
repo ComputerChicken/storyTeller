@@ -173,7 +173,7 @@ class interactable:
         return out
 
 # Primary function of library used to initalize the story
-def begin_story(locations, characters = [], interactables = [], inventory = []):
+def begin_story(locations, characters = [], interactables = [], inventory = [], objective = ""):
     global width, height
     locationsTemp = {}
     for loc in locations:
@@ -196,7 +196,7 @@ def begin_story(locations, characters = [], interactables = [], inventory = []):
     interactables = interactablesTemp.copy()
 
     # This will define the current dialog/message that is shown to the user
-    userDisplay = ""
+    userDisplay = objective
 
     currentLoc = list(locations.keys())[0]
     while True:
@@ -403,7 +403,8 @@ def story_builder(locations = [location("default","NO START")], characters = [],
 
     currentLoc = list(locations.keys())[0]
 
-    inputs = [InputBox(width/2,height/2-75,200,50,"Name"),InputBox(width/2,height/2-25,200,50,"Start"),InputBox(width/2,height/2+25,200,50,"Dialog"),InputBox(width/2,height/2+75,200,50,"Item Required")]
+    inputs = [InputBox(0,0,200,50,"Name"),InputBox(0,0,200,50,"Dialog"),InputBox(0,0,200,50,"Item Required")]
+    selection = 0
 
     while True:
         # Get mouse pos
@@ -412,10 +413,6 @@ def story_builder(locations = [location("default","NO START")], characters = [],
 
         # Reset screen
         screen.fill((255, 255, 255))
-
-        for inputObj in inputs:
-            inputObj.draw(screen)
-            inputObj.update()
 
         # Check for exit and click events
         for event in pygame.event.get():
@@ -429,6 +426,38 @@ def story_builder(locations = [location("default","NO START")], characters = [],
                 height = event.h
             for inputObj in inputs:
                 inputObj.handle_event(event)
+
+        selections = [pixelFontSmall.render("Location",False,(0,0,0)),pixelFontSmall.render("Item",False,(0,0,0)),pixelFontSmall.render("Character",False,(0,0,0)),pixelFontSmall.render("Interactable",False,(0,0,0))]
+        tempBlit = screen.blit(selections[selection],(0,height-selections[selection].get_rect().height))
+        if(tempBlit.collidepoint(mouseX,mouseY)):
+            pygame.draw.rect(screen,(0,0,0),tempBlit,2)
+            if(click):
+                selection = (selection+1) % (len(selections))
+                match selection:
+                    case 0:
+                        inputs = [InputBox(0,0,200,50,"Name"),InputBox(0,0,200,50,"Dialog"),InputBox(0,0,200,50,"Item Required")]
+                    case 1:
+                        inputs = [InputBox(0,0,200,50,"Name"),InputBox(0,0,200,50,"Info"),InputBox(0,0,200,50,"On Use")]
+                    case _:
+                        inputs = [InputBox(0,0,200,50,"Name"),InputBox(0,0,200,50,"Dialog"),InputBox(0,0,200,50,"Item Required")]
+
+        for index, inputObj in enumerate(inputs):
+            inputObj.rect.y = height-(len(inputs)-index)*inputObj.rect.h-tempBlit.height
+            inputObj.draw(screen)
+            inputObj.update()
+        
+        tempText = pixelFont.render("+", False, (0, 0, 0))
+        tempBlit = blit_centered(tempText,(tempText.get_rect().width+3,height-len(inputs)*50-tempText.get_rect().height/2-tempBlit.height))
+        pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-18,tempBlit.top,tempBlit.height,tempBlit.height),5)
+
+        if(tempBlit.collidepoint(mouseX,mouseY) and click):
+            match selection:
+                case 0:
+                    locations[inputs[0].text] = location(inputs[0].text,currentLoc,inputs[1].text if inputs[1].text else None,inputs[2].text if inputs[2].text else None)
+                case 1:
+                    inventory[inputs[0].text] = item(inputs[0].text,inputs[1].text,inputs[2].text if inputs[2].text else None)
+                case _:
+                    locations[inputs[0].text] = location(inputs[0].text,currentLoc,inputs[1].text if inputs[1].text else None,inputs[2].text if inputs[2].text else None)
 
         # Show the user display text
         lines = userDisplay.split("\n")
@@ -476,13 +505,6 @@ def story_builder(locations = [location("default","NO START")], characters = [],
                                 userDisplay = locations[target].onTravel
                         else:
                             userDisplay = "Missing item: " + locations[target].itemRequired
-        tempText = pixelFont.render("+", False, (0, 0, 0))
-        tempBlit = blit_centered(tempText,(width/4*2-width/8,tempText.get_rect().height*(len(vistableLocations)+2)))
-        pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-18,tempBlit.top,tempBlit.height,tempBlit.height),5)
-
-        if(tempBlit.collidepoint(mouseX,mouseY) and click):
-            print(locations)
-            locations[inputs[0].text] = location(inputs[0].text,inputs[1].text if inputs[1].text else None,inputs[2].text if inputs[2].text else None,inputs[3].text if inputs[3].text else None)
 
         for itm in list(inventory.keys()):
             tempText = pixelFont.render(itm, False, (0, 0, 0))
@@ -496,9 +518,6 @@ def story_builder(locations = [location("default","NO START")], characters = [],
                 screen.blit(tempText,(mouseX,mouseY-tempText.get_rect().height))
                 if(click):
                     userDisplay = inventory[itm].use(inventory)
-        tempText = pixelFont.render("+", False, (0, 0, 0))
-        tempBlit = blit_centered(tempText,(width/4-width/8,tempText.get_rect().height*(len(list(inventory.keys()))+2)))
-        pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-18,tempBlit.top,tempBlit.height,tempBlit.height),5)
         
         interactableCharacters = list(characters.keys())
         for chr in characters:
@@ -512,9 +531,6 @@ def story_builder(locations = [location("default","NO START")], characters = [],
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
                 if(click and characters[chr].canInteract(currentLoc)):
                     userDisplay = characters[chr].interact(inventory, characters)
-        tempText = pixelFont.render("+", False, (0, 0, 0))
-        tempBlit = blit_centered(tempText,(width/4*3-width/8,tempText.get_rect().height*(len(interactableCharacters)+2)))
-        pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-18,tempBlit.top,tempBlit.height,tempBlit.height),5)
 
         interactableInteractables = list(interactables.keys())
         for intr in interactables:
@@ -528,9 +544,6 @@ def story_builder(locations = [location("default","NO START")], characters = [],
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
                 if(click):
                     userDisplay = interactables[intr].interact(inventory, interactables)
-        tempText = pixelFont.render("+", False, (0, 0, 0))
-        tempBlit = blit_centered(tempText,(width-width/8,tempText.get_rect().height*(len(interactableInteractables)+2)))
-        pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-18,tempBlit.top,tempBlit.height,tempBlit.height),5)
 
         menuText = pixelFont.render("MENU", False, (0, 0, 0))
 
