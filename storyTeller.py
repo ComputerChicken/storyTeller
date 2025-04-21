@@ -4,7 +4,6 @@ import pygame
 from pygame.locals import *
 import os
 import math
-import random
 from tkinter import Tk     # tkinter for file management
 from tkinter.filedialog import askopenfilename
 
@@ -272,6 +271,16 @@ class interactable:
             out = "Must have " + this.itemRequired + " to interact"
         return out
 
+def format(file):
+    out = ""
+    with open(file,"r") as f:
+        out = f.read()
+        strings = list(set([string.replace("#-#","'") for string in "\n".join(out.split("\n")[:-3]).replace("\\'","#-#").split("'")[1::2]]))
+    for i, string in enumerate(strings):
+        out = out.replace("'" + string + "'", "'" + string.split(" || ID: ")[0] + " || ID: ^^^" + f"{i:05d}" + "'")
+    with open(file,"w") as f:
+        f.write(out)
+
 # i'm sorry for this code :(
 def export(name, locations, characters, interactables, inventory, interacted, objective):
 
@@ -320,6 +329,9 @@ def export(name, locations, characters, interactables, inventory, interacted, ob
     # Write the file (•_•)👍
     with open(name + ".story","w") as f:
         f.write(file)
+
+    # Format the file with IDs
+    format(name + ".story")
 
 # Primary function of library used to initalize the story
 def begin_story(name, locations, characters = [], interactables = [], inventory = [], interacted = set([]), objective = ""):
@@ -381,7 +393,11 @@ def begin_story(name, locations, characters = [], interactables = [], inventory 
         # Show the user display text
 
         # Split the text into lines if the text is to big or contains and escape character (escape characters cannot be proccessed by the text renderer)
-        lines = userDisplay.split("\n")
+        idSplit = userDisplay.split(" || ID: ")
+        for i in range(len(idSplit)):
+            if "^^^" in idSplit[i]:
+                idSplit[i] = idSplit[i][8:]
+        lines = "".join(idSplit).split("\n")
         for i, line in enumerate(lines):
             userDisplayText = pixelFont.render(line, False, (0, 0, 0))
             if(userDisplayText.get_rect().width > width):
@@ -415,7 +431,7 @@ def begin_story(name, locations, characters = [], interactables = [], inventory 
                 vistableLocations.pop(vistableLocations.index(loc))
 
         for loc in vistableLocations:
-            tempText = pixelFont.render(loc, False, (0, 0, 0))
+            tempText = pixelFont.render(loc.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4*2-width/8,tempText.get_rect().height*(vistableLocations.index(loc)+2)))
             # Check if hovering if so display a box around text
             if(tempBlit.collidepoint(mouseX,mouseY)):
@@ -426,13 +442,13 @@ def begin_story(name, locations, characters = [], interactables = [], inventory 
         
         # List all items in inventory
         for itm in list(inventory.keys()):
-            tempText = pixelFont.render(itm, False, (0, 0, 0))
+            tempText = pixelFont.render(itm.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4-width/8,tempText.get_rect().height*(list(inventory.keys()).index(itm)+2)))
             # Check if the user is hovering, if so display a box around text and then show the tooltip thing
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
 
-                tempText = pixelFontSmall.render(inventory[itm].info, False, (0, 0, 0))
+                tempText = pixelFontSmall.render(inventory[itm].info.split(" || ID: ")[0], False, (0, 0, 0))
                 tempBlit = screen.blit(tempText,(mouseX,mouseY-tempText.get_rect().height))
 
                 pygame.draw.rect(screen,(255, 255, 255),pygame.Rect(tempBlit.left-6,tempBlit.top,tempBlit.width+8,tempBlit.height))
@@ -450,7 +466,7 @@ def begin_story(name, locations, characters = [], interactables = [], inventory 
                 interactableCharacters.pop(interactableCharacters.index(chr))
 
         for chr in interactableCharacters:
-            tempText = pixelFont.render(chr, False, (0, 0, 0))
+            tempText = pixelFont.render(chr.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4*3-width/8,tempText.get_rect().height*(interactableCharacters.index(chr)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
@@ -463,7 +479,7 @@ def begin_story(name, locations, characters = [], interactables = [], inventory 
                 interactableInteractables.pop(interactableInteractables.index(intr))
 
         for intr in interactableInteractables:
-            tempText = pixelFont.render(intr, False, (0, 0, 0))
+            tempText = pixelFont.render(intr.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width-width/8,tempText.get_rect().height*(interactableInteractables.index(intr)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
@@ -785,7 +801,11 @@ def story_builder(name, locations = [location("default","NO START")], characters
                     )
 
         # Show the user display text
-        lines = userDisplay.split("\n")
+        idSplit = userDisplay.split(" || ID: ")
+        for i in range(len(idSplit)):
+            if "^^^" in idSplit[i]:
+                idSplit[i] = idSplit[i][8:]
+        lines = "".join(idSplit).split("\n")
         for i, line in enumerate(lines):
             userDisplayText = pixelFont.render(line, False, (0, 0, 0))
             if(userDisplayText.get_rect().width > width):
@@ -817,7 +837,7 @@ def story_builder(name, locations = [location("default","NO START")], characters
                 vistableLocations.pop(vistableLocations.index(loc))
 
         for loc in vistableLocations:
-            tempText = pixelFont.render(loc, False, (0, 0, 0))
+            tempText = pixelFont.render(loc.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4*2-width/8,tempText.get_rect().height*(vistableLocations.index(loc)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
@@ -828,11 +848,11 @@ def story_builder(name, locations = [location("default","NO START")], characters
                     rightClick = False
 
         for itm in list(inventory.keys()):
-            tempText = pixelFont.render(itm, False, (0, 0, 0))
+            tempText = pixelFont.render(itm.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4-width/8,tempText.get_rect().height*(list(inventory.keys()).index(itm)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
-                tempText = pixelFontSmall.render(inventory[itm].info, False, (0, 0, 0))
+                tempText = pixelFontSmall.render(inventory[itm].info.split(" || ID: ")[0], False, (0, 0, 0))
                 tempBlit = screen.blit(tempText,(mouseX,mouseY-tempText.get_rect().height))
                 pygame.draw.rect(screen,(255, 255, 255),pygame.Rect(tempBlit.left-6,tempBlit.top,tempBlit.width+8,tempBlit.height))
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-6,tempBlit.top,tempBlit.width+8,tempBlit.height),3)
@@ -849,7 +869,7 @@ def story_builder(name, locations = [location("default","NO START")], characters
                 interactableCharacters.pop(interactableCharacters.index(chr))
 
         for chr in interactableCharacters:
-            tempText = pixelFont.render(chr, False, (0, 0, 0))
+            tempText = pixelFont.render(chr.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width/4*3-width/8,tempText.get_rect().height*(interactableCharacters.index(chr)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
@@ -865,7 +885,7 @@ def story_builder(name, locations = [location("default","NO START")], characters
                 interactableInteractables.pop(interactableInteractables.index(intr))
 
         for intr in interactableInteractables:
-            tempText = pixelFont.render(intr, False, (0, 0, 0))
+            tempText = pixelFont.render(intr.split(" || ID: ")[0], False, (0, 0, 0))
             tempBlit = blit_centered(tempText,(width-width/8,tempText.get_rect().height*(interactableInteractables.index(intr)+2)))
             if(tempBlit.collidepoint(mouseX,mouseY)):
                 pygame.draw.rect(screen,(0, 0, 0),pygame.Rect(tempBlit.left-10,tempBlit.top,tempBlit.width+13,tempBlit.height),5)
